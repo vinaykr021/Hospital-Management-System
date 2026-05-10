@@ -8,6 +8,7 @@ import Dashboard from './pages/Dashboard';
 import Patients from './pages/Patients';
 import Doctors from './pages/Doctors';
 import Appointments from './pages/Appointments';
+import Wards from './pages/Wards';
 
 // A simple login component
 function Login({ setToken }: { setToken: (t: string) => void }) {
@@ -111,6 +112,7 @@ export default function App() {
           <Route path="patients" element={<Patients />} />
           <Route path="doctors" element={<Doctors />} />
           <Route path="appointments" element={<Appointments />} />
+          <Route path="wards" element={<Wards />} />
           
           {/* Catch all unmatched routes and redirect to dashboard */}
           <Route path="*" element={<Navigate to="/" />} />

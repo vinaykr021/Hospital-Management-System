@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { FaTrash, FaSearch, FaFilter, FaCalendarPlus, FaCalendarCheck, FaClock, FaCheckCircle, FaTimesCircle, FaExclamationTriangle, FaTimes, FaCalendarDay, FaUserMd, FaUser, FaBell, FaCalendarAlt } from 'react-icons/fa';
+import { FaTrash, FaSearch, FaFilter, FaCalendarPlus, FaCalendarCheck, FaClock, FaCheckCircle, FaTimesCircle, FaExclamationTriangle, FaTimes, FaCalendarDay, FaUserMd, FaUser, FaCalendarAlt } from 'react-icons/fa';
 import Calendar from 'react-calendar';
 import 'react-calendar/dist/Calendar.css';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip as RechartsTooltip, Legend } from 'recharts';
@@ -328,20 +328,7 @@ export default function Appointments() {
             )}
           </div>
 
-          {/* Notifications / Alerts Panel */}
-          <div className="bg-gradient-to-br from-indigo-500 to-blue-600 p-6 rounded-2xl shadow-lg text-white">
-            <h3 className="text-lg font-bold mb-4 flex items-center"><FaBell className="mr-2 text-indigo-200" /> Notifications</h3>
-            <div className="space-y-3">
-              <div className="bg-white/10 p-3 rounded-xl border border-white/20">
-                <p className="text-sm font-semibold">Dr. Smith available</p>
-                <p className="text-xs text-indigo-100">Cardiology slots are open for today.</p>
-              </div>
-              <div className="bg-white/10 p-3 rounded-xl border border-white/20">
-                <p className="text-sm font-semibold">System Update</p>
-                <p className="text-xs text-indigo-100">Maintenance scheduled at 2 AM.</p>
-              </div>
-            </div>
-          </div>
+
 
         </div>
       </div>

@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
-import { FaTrash, FaSearch, FaFilter, FaUserPlus, FaUserInjured, FaProcedures, FaTint, FaExclamationTriangle, FaTimes, FaCheckCircle, FaUserMd } from 'react-icons/fa';
+import { FaTrash, FaSearch, FaFilter, FaUserPlus, FaUserInjured, FaProcedures, FaTint, FaExclamationTriangle, FaTimes, FaCheckCircle, FaUserMd, FaIdCard } from 'react-icons/fa';
+import QRCode from 'react-qr-code';
 
 export default function Patients() {
   const [patients, setPatients] = useState<any[]>([]);
@@ -17,6 +18,7 @@ export default function Patients() {
   const [showAddModal, setShowAddModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [patientToDelete, setPatientToDelete] = useState<number | null>(null);
+  const [selectedPatientForQR, setSelectedPatientForQR] = useState<any | null>(null);
 
   // Form State
   const [formData, setFormData] = useState({ name: '', age: '', gender: '', phone: '', address: '', blood_group: '' });
@@ -249,7 +251,14 @@ export default function Patients() {
                         <span className="w-1.5 h-1.5 rounded-full bg-green-500 mr-1.5 animate-pulse"></span> Active
                       </span>
                     </td>
-                    <td className="p-5 text-right">
+                    <td className="p-5 text-right space-x-2">
+                      <button 
+                        onClick={() => setSelectedPatientForQR(p)}
+                        className="text-gray-400 hover:text-blue-600 hover:bg-blue-50 p-2.5 rounded-xl transition-all opacity-0 group-hover:opacity-100"
+                        title="View ID Card"
+                      >
+                        <FaIdCard />
+                      </button>
                       <button 
                         onClick={() => { setPatientToDelete(p.id); setShowDeleteModal(true); }}
                         className="text-gray-400 hover:text-red-500 hover:bg-red-50 p-2.5 rounded-xl transition-all opacity-0 group-hover:opacity-100"
@@ -372,6 +381,53 @@ export default function Patients() {
             <div className="flex justify-center space-x-3">
               <button onClick={() => setShowDeleteModal(false)} className="px-5 py-2.5 text-gray-700 font-medium bg-gray-100 hover:bg-gray-200 rounded-xl transition-colors w-full">Cancel</button>
               <button onClick={confirmDelete} className="bg-red-500 text-white px-5 py-2.5 font-bold rounded-xl hover:bg-red-600 shadow-lg shadow-red-500/30 transition-all w-full">Yes, Delete</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Patient ID Card Modal */}
+      {selectedPatientForQR && (
+        <div className="fixed inset-0 bg-gray-900/60 backdrop-blur-sm flex items-center justify-center z-[60] p-4 transition-all">
+          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden relative">
+            <button onClick={() => setSelectedPatientForQR(null)} className="absolute top-4 right-4 text-white/80 hover:text-white bg-black/20 hover:bg-black/40 p-2 rounded-full backdrop-blur-md transition-all z-10">
+              <FaTimes />
+            </button>
+            
+            <div className="bg-gradient-to-br from-blue-600 to-cyan-500 h-32 flex flex-col items-center justify-center text-white relative">
+               <h2 className="text-2xl font-black tracking-widest uppercase opacity-20 absolute w-full text-center top-4">HOSPITAL ID</h2>
+            </div>
+            
+            <div className="px-8 pb-8 flex flex-col items-center -mt-16">
+              <div className="h-32 w-32 bg-white rounded-2xl shadow-xl p-2 mb-6 z-10 flex items-center justify-center">
+                <QRCode 
+                  value={JSON.stringify({ id: selectedPatientForQR.id, name: selectedPatientForQR.name, blood: selectedPatientForQR.blood_group })} 
+                  size={110} 
+                  level="H" 
+                />
+              </div>
+              
+              <h2 className="text-2xl font-bold text-gray-800 mb-1">{selectedPatientForQR.name}</h2>
+              <p className="text-gray-500 font-medium tracking-widest uppercase text-sm mb-6">Patient ID: {String(selectedPatientForQR.id).padStart(6, '0')}</p>
+              
+              <div className="w-full grid grid-cols-2 gap-4 bg-gray-50 rounded-2xl p-4 border border-gray-100">
+                <div>
+                  <p className="text-xs text-gray-400 font-bold uppercase mb-1">Age / Gender</p>
+                  <p className="font-bold text-gray-700">{selectedPatientForQR.age} Yrs, {selectedPatientForQR.gender}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-400 font-bold uppercase mb-1">Blood Group</p>
+                  <p className="font-bold text-red-600 flex items-center"><FaTint className="mr-1"/> {selectedPatientForQR.blood_group}</p>
+                </div>
+                <div className="col-span-2 pt-2 border-t border-gray-200">
+                  <p className="text-xs text-gray-400 font-bold uppercase mb-1">Contact</p>
+                  <p className="font-semibold text-gray-700">{selectedPatientForQR.phone}</p>
+                </div>
+              </div>
+
+              <button onClick={() => window.print()} className="mt-6 w-full bg-gray-900 text-white font-bold py-3 rounded-xl hover:bg-black transition-colors shadow-lg">
+                Print ID Card
+              </button>
             </div>
           </div>
         </div>
