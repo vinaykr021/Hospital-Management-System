@@ -101,11 +101,11 @@ export default function Dashboard() {
 
         <div className="bg-gradient-to-br from-purple-600 to-purple-400 p-4 md:p-6 rounded-xl shadow-lg text-white transform hover:-translate-y-1 transition-all duration-300">
           <div className="flex justify-between items-center mb-2 md:mb-4">
-            <h3 className="text-purple-100 text-xs md:text-sm font-semibold uppercase tracking-wider">Available Beds</h3>
+            <h3 className="text-purple-100 text-xs md:text-sm font-semibold uppercase tracking-wider">Bed Occupancy</h3>
             <FaBed className="text-purple-200 text-xl md:text-2xl opacity-80" />
           </div>
-          <p className="text-3xl md:text-4xl font-bold">{stats.availableBeds}</p>
-          <p className="text-purple-100 text-xs mt-2">Out of {stats.totalBeds} total capacity</p>
+          <p className="text-3xl md:text-4xl font-bold">{((stats as any).occupiedBeds || 0)} / {stats.totalBeds}</p>
+          <p className="text-purple-100 text-xs mt-2">{stats.availableBeds} beds currently available</p>
         </div>
       </div>
 

@@ -9,6 +9,15 @@ export interface Patient {
   created_at: string;
 }
 
+export interface Bed {
+  id: number;
+  ward_id: number;
+  bed_number: string;
+  status: 'available' | 'occupied';
+  patient_id: number | null;
+  patient_name: string | null;
+}
+
 export interface Doctor {
   id: number;
   name: string;
@@ -24,8 +33,10 @@ export interface Appointment {
   doctor_id: number;
   date: string;
   time: string;
-  status: 'scheduled' | 'completed' | 'cancelled';
+  status: 'Scheduled' | 'Completed' | 'Cancelled';
   reason: string;
+  admission_required: 'yes' | 'no';
+  bed_assigned: number | null;
 }
 
 export interface Ward {
@@ -40,7 +51,7 @@ export interface Admission {
   id: number;
   patient_id: number;
   ward_id: number;
-  bed_no: number;
+  bed_id: number;
   admitted_at: string;
   discharged_at: string | null;
 }

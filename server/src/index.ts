@@ -47,13 +47,15 @@ app.get('/api/stats', authenticate, (req, res) => {
     const doctorsCount: any = db.prepare('SELECT COUNT(*) as count FROM doctors').get();
     const appointmentsCount: any = db.prepare('SELECT COUNT(*) as count FROM appointments').get();
     const wardStats: any = db.prepare('SELECT SUM(total_beds) as total, SUM(occupied_beds) as occupied FROM wards').get();
+    const availableBeds: any = db.prepare("SELECT COUNT(*) as count FROM beds WHERE status = 'available'").get();
     
     res.json({
       patients: patientsCount.count,
       doctors: doctorsCount.count,
       appointments: appointmentsCount.count,
-      availableBeds: (wardStats.total || 0) - (wardStats.occupied || 0),
-      totalBeds: wardStats.total || 0
+      availableBeds: availableBeds.count,
+      totalBeds: wardStats.total || 0,
+      occupiedBeds: (wardStats.total || 0) - availableBeds.count
     });
   } catch (err) {
     res.status(500).json({ error: 'Failed to fetch stats' });
@@ -70,37 +72,77 @@ app.get('/api/wards', authenticate, (req, res) => {
   }
 });
 
-app.post('/api/admissions', authenticate, (req, res) => {
-  const { patient_id, ward_id, bed_no } = req.body;
+app.post('/api/beds', authenticate, (req, res) => {
+  const { ward_id, bed_number } = req.body;
   try {
-    const transaction = db.transaction(() => {
-      const result = db.prepare(
-        'INSERT INTO admissions (patient_id, ward_id, bed_no) VALUES (?, ?, ?)'
-      ).run(patient_id, ward_id, bed_no);
-      
-      db.prepare('UPDATE wards SET occupied_beds = occupied_beds + 1 WHERE id = ?').run(ward_id);
-      return result.lastInsertRowid;
-    });
+    const wId = parseInt(ward_id);
+    if (isNaN(wId)) return res.status(400).json({ error: 'Invalid ward ID' });
 
-    const admissionId = transaction();
-    res.json({ id: admissionId });
+    db.transaction(() => {
+      db.prepare('INSERT INTO beds (ward_id, bed_number) VALUES (?, ?)')
+        .run(wId, bed_number);
+      db.prepare('UPDATE wards SET total_beds = total_beds + 1 WHERE id = ?')
+        .run(wId);
+    })();
+    res.json({ success: true });
   } catch (err) {
-    res.status(500).json({ error: 'Failed to create admission' });
+    console.error('Error adding bed:', err);
+    res.status(500).json({ error: 'Failed to add bed' });
+  }
+});
+app.get('/api/beds', authenticate, (req, res) => {
+  try {
+    const beds = db.prepare(`
+      SELECT b.*, w.name as ward_name, w.floor 
+      FROM beds b
+      JOIN wards w ON b.ward_id = w.id
+      ORDER BY w.name, b.bed_number
+    `).all();
+    res.json(beds);
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to fetch beds' });
   }
 });
 
-app.get('/api/admissions', authenticate, (req, res) => {
+app.post('/api/beds/assign', authenticate, (req, res) => {
+  const { bed_id, patient_id } = req.body;
   try {
-    const admissions = db.prepare(`
-      SELECT a.*, p.name as patient_name, w.name as ward_name 
-      FROM admissions a
-      JOIN patients p ON a.patient_id = p.id
-      JOIN wards w ON a.ward_id = w.id
-      WHERE a.discharged_at IS NULL
-    `).all();
-    res.json(admissions);
+    const patient: any = db.prepare('SELECT name FROM patients WHERE id = ?').get(patient_id);
+    if (!patient) return res.status(404).json({ error: 'Patient not found' });
+
+    db.transaction(() => {
+      const bed: any = db.prepare('SELECT ward_id FROM beds WHERE id = ?').get(bed_id);
+      db.prepare("UPDATE beds SET status = 'occupied', patient_id = ?, patient_name = ? WHERE id = ?")
+        .run(patient_id, patient.name, bed_id);
+      db.prepare('UPDATE wards SET occupied_beds = occupied_beds + 1 WHERE id = ?')
+        .run(bed.ward_id);
+      
+      db.prepare('INSERT INTO admissions (patient_id, ward_id, bed_id) VALUES (?, ?, ?)')
+        .run(patient_id, bed.ward_id, bed_id);
+    })();
+
+    res.json({ success: true });
   } catch (err) {
-    res.status(500).json({ error: 'Failed to fetch admissions' });
+    res.status(500).json({ error: 'Failed to assign bed' });
+  }
+});
+
+app.put('/api/beds/discharge/:id', authenticate, (req, res) => {
+  try {
+    db.transaction(() => {
+      const bed: any = db.prepare('SELECT ward_id, patient_id FROM beds WHERE id = ?').get(req.params.id);
+      if (!bed) throw new Error('Bed not found');
+
+      db.prepare("UPDATE beds SET status = 'available', patient_id = NULL, patient_name = NULL WHERE id = ?")
+        .run(req.params.id);
+      db.prepare('UPDATE wards SET occupied_beds = MAX(0, occupied_beds - 1) WHERE id = ?')
+        .run(bed.ward_id);
+      db.prepare("UPDATE admissions SET discharged_at = CURRENT_TIMESTAMP WHERE bed_id = ? AND patient_id = ? AND discharged_at IS NULL")
+        .run(req.params.id, bed.patient_id);
+    })();
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to discharge patient' });
   }
 });
 
@@ -161,10 +203,29 @@ app.get('/api/patients/:id', authenticate, (req, res) => {
 });
 
 app.delete('/api/patients/:id', authenticate, (req, res) => {
+  const patientId = req.params.id;
   try {
-    db.prepare('DELETE FROM patients WHERE id = ?').run(req.params.id);
+    db.transaction(() => {
+      // 1. Reset any beds occupied by this patient
+      db.prepare("UPDATE beds SET status = 'available', patient_id = NULL, patient_name = NULL WHERE patient_id = ?")
+        .run(patientId);
+
+      // 2. Delete appointments
+      db.prepare('DELETE FROM appointments WHERE patient_id = ?').run(patientId);
+
+      // 3. Delete admissions
+      db.prepare('DELETE FROM admissions WHERE patient_id = ?').run(patientId);
+
+      // 4. Delete bills
+      db.prepare('DELETE FROM bills WHERE patient_id = ?').run(patientId);
+
+      // 5. Finally delete the patient
+      db.prepare('DELETE FROM patients WHERE id = ?').run(patientId);
+    })();
+    
     res.json({ success: true });
   } catch (err) {
+    console.error(err);
     res.status(500).json({ error: 'Failed to delete patient' });
   }
 });
@@ -192,10 +253,18 @@ app.post('/api/doctors', authenticate, (req, res) => {
 });
 
 app.delete('/api/doctors/:id', authenticate, (req, res) => {
+  const doctorId = req.params.id;
   try {
-    db.prepare('DELETE FROM doctors WHERE id = ?').run(req.params.id);
+    db.transaction(() => {
+      // Delete linked appointments first
+      db.prepare('DELETE FROM appointments WHERE doctor_id = ?').run(doctorId);
+      
+      // Delete the doctor
+      db.prepare('DELETE FROM doctors WHERE id = ?').run(doctorId);
+    })();
     res.json({ success: true });
   } catch (err) {
+    console.error(err);
     res.status(500).json({ error: 'Failed to delete doctor' });
   }
 });
@@ -217,14 +286,41 @@ app.get('/api/appointments', authenticate, (req, res) => {
 });
 
 app.post('/api/appointments', authenticate, (req, res) => {
-  const { patient_id, doctor_id, date, time, status, reason } = req.body;
+  const { patient_id, doctor_id, date, time, status, reason, admission_required } = req.body;
   try {
-    const result = db.prepare(
-      'INSERT INTO appointments (patient_id, doctor_id, date, time, status, reason) VALUES (?, ?, ?, ?, ?, ?)'
-    ).run(patient_id, doctor_id, date, time, status || 'Scheduled', reason);
-    res.json({ id: result.lastInsertRowid });
-  } catch (err) {
-    res.status(500).json({ error: 'Failed to create appointment' });
+    const appointmentId = db.transaction(() => {
+      let bed_assigned = null;
+
+      if (admission_required === 'yes') {
+        const availableBed: any = db.prepare("SELECT id, ward_id FROM beds WHERE status = 'available' LIMIT 1").get();
+        if (!availableBed) {
+          throw new Error('No beds available for admission');
+        }
+
+        const patient: any = db.prepare('SELECT name FROM patients WHERE id = ?').get(patient_id);
+        
+        db.prepare("UPDATE beds SET status = 'occupied', patient_id = ?, patient_name = ? WHERE id = ?")
+          .run(patient_id, patient.name, availableBed.id);
+        
+        db.prepare('UPDATE wards SET occupied_beds = occupied_beds + 1 WHERE id = ?')
+          .run(availableBed.ward_id);
+
+        db.prepare('INSERT INTO admissions (patient_id, ward_id, bed_id) VALUES (?, ?, ?)')
+          .run(patient_id, availableBed.ward_id, availableBed.id);
+
+        bed_assigned = availableBed.id;
+      }
+
+      const result = db.prepare(
+        'INSERT INTO appointments (patient_id, doctor_id, date, time, status, reason, admission_required, bed_assigned) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
+      ).run(patient_id, doctor_id, date, time, status || 'Scheduled', reason, admission_required || 'no', bed_assigned);
+      
+      return result.lastInsertRowid;
+    })();
+
+    res.json({ id: appointmentId });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message || 'Failed to create appointment' });
   }
 });
 

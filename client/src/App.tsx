@@ -9,7 +9,9 @@ import Patients from './pages/Patients';
 import Doctors from './pages/Doctors';
 import Appointments from './pages/Appointments';
 import Wards from './pages/Wards';
+import AddBed from './pages/AddBed';
 import Billing from './pages/Billing';
+import ErrorBoundary from './components/ErrorBoundary';
 
 // A simple login component
 function Login({ setToken }: { setToken: (t: string) => void }) {
@@ -104,22 +106,25 @@ export default function App() {
   }
 
   return (
-    <Router>
-      <Routes>
-        {/* Parent Route for Layout */}
-        <Route path="/" element={<DashboardLayout />}>
-          {/* Nested Routes - These will be rendered inside the <Outlet /> in DashboardLayout */}
-          <Route index element={<Dashboard />} />
-          <Route path="patients" element={<Patients />} />
-          <Route path="doctors" element={<Doctors />} />
-          <Route path="appointments" element={<Appointments />} />
-          <Route path="wards" element={<Wards />} />
-          <Route path="billing" element={<Billing />} />
-          
-          {/* Catch all unmatched routes and redirect to dashboard */}
-          <Route path="*" element={<Navigate to="/" />} />
-        </Route>
-      </Routes>
-    </Router>
+    <ErrorBoundary>
+      <Router>
+        <Routes>
+          {/* Parent Route for Layout */}
+          <Route path="/" element={<DashboardLayout />}>
+            {/* Nested Routes */}
+            <Route index element={<Dashboard />} />
+            <Route path="patients" element={<Patients />} />
+            <Route path="doctors" element={<Doctors />} />
+            <Route path="appointments" element={<Appointments />} />
+            <Route path="wards" element={<Wards />} />
+            <Route path="wards/add" element={<AddBed />} />
+            <Route path="billing" element={<Billing />} />
+            
+            {/* Catch all unmatched routes and redirect to dashboard */}
+            <Route path="*" element={<Navigate to="/" />} />
+          </Route>
+        </Routes>
+      </Router>
+    </ErrorBoundary>
   );
 }

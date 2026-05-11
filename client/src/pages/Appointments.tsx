@@ -21,7 +21,15 @@ export default function Appointments() {
   const [apptToDelete, setApptToDelete] = useState<number | null>(null);
 
   // Form State
-  const [formData, setFormData] = useState({ patient_id: '', doctor_id: '', date: '', time: '', status: 'Scheduled', reason: '' });
+  const [formData, setFormData] = useState({ 
+    patient_id: '', 
+    doctor_id: '', 
+    date: '', 
+    time: '', 
+    status: 'Scheduled', 
+    reason: '',
+    admission_required: 'no' as 'yes' | 'no'
+  });
   
   // Toast
   const [toast, setToast] = useState<{message: string, type: 'success'|'error'} | null>(null);
@@ -74,11 +82,12 @@ export default function Appointments() {
       });
       if (res.ok) {
         setShowModal(false);
-        setFormData({ patient_id: '', doctor_id: '', date: '', time: '', status: 'Scheduled', reason: '' });
+        setFormData({ patient_id: '', doctor_id: '', date: '', time: '', status: 'Scheduled', reason: '', admission_required: 'no' });
         fetchData();
         showToast('Appointment scheduled successfully!', 'success');
       } else {
-        showToast('Failed to schedule appointment', 'error');
+        const data = await res.json();
+        showToast(data.error || 'Failed to schedule appointment', 'error');
       }
     } catch (err) {
       console.error(err);
@@ -383,6 +392,23 @@ export default function Appointments() {
                 <div>
                   <label className="block text-xs font-bold text-gray-600 uppercase mb-1">Reason for Visit</label>
                   <input placeholder="e.g. Checkup, Fever..." type="text" className="w-full border border-gray-200 bg-gray-50 p-3 rounded-xl focus:bg-white focus:ring-2 focus:ring-indigo-500 outline-none transition-all" required value={formData.reason} onChange={e => setFormData({...formData, reason: e.target.value})} />
+                </div>
+              </div>
+
+              <div className="bg-indigo-50 p-4 rounded-2xl border border-indigo-100">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h4 className="text-sm font-bold text-indigo-900">Hospital Admission</h4>
+                    <p className="text-xs text-indigo-600 mt-0.5">Does this patient require a bed?</p>
+                  </div>
+                  <select 
+                    className="bg-white border border-indigo-200 text-indigo-900 text-sm font-bold rounded-lg px-3 py-1.5 focus:ring-2 focus:ring-indigo-500 outline-none"
+                    value={formData.admission_required}
+                    onChange={e => setFormData({...formData, admission_required: e.target.value as 'yes' | 'no'})}
+                  >
+                    <option value="no">No</option>
+                    <option value="yes">Yes (Auto-assign Bed)</option>
+                  </select>
                 </div>
               </div>
               
