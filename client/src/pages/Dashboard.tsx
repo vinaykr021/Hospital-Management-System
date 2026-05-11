@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { FaUserMd, FaWheelchair, FaCalendarCheck, FaBed, FaAmbulance, FaPlus, FaFileMedical, FaVial } from 'react-icons/fa';
 
@@ -112,22 +113,22 @@ export default function Dashboard() {
       <div>
         <h2 className="text-base md:text-lg font-bold text-gray-800 mb-3 md:mb-4">Quick Actions</h2>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
-          <button className="flex flex-col sm:flex-row items-center justify-center sm:justify-start space-y-2 sm:space-y-0 sm:space-x-3 bg-white p-3 sm:py-3 sm:px-4 rounded-xl shadow-sm border border-gray-100 hover:shadow-md hover:border-blue-500 transition-all text-gray-700">
+          <Link to="/patients" className="flex flex-col sm:flex-row items-center justify-center sm:justify-start space-y-2 sm:space-y-0 sm:space-x-3 bg-white p-3 sm:py-3 sm:px-4 rounded-xl shadow-sm border border-gray-100 hover:shadow-md hover:border-blue-500 transition-all text-gray-700">
             <FaPlus className="text-blue-500 text-xl sm:text-base" />
             <span className="font-medium text-xs sm:text-sm text-center">Register Patient</span>
-          </button>
-          <button className="flex flex-col sm:flex-row items-center justify-center sm:justify-start space-y-2 sm:space-y-0 sm:space-x-3 bg-white p-3 sm:py-3 sm:px-4 rounded-xl shadow-sm border border-gray-100 hover:shadow-md hover:border-blue-500 transition-all text-gray-700">
+          </Link>
+          <Link to="/appointments" className="flex flex-col sm:flex-row items-center justify-center sm:justify-start space-y-2 sm:space-y-0 sm:space-x-3 bg-white p-3 sm:py-3 sm:px-4 rounded-xl shadow-sm border border-gray-100 hover:shadow-md hover:border-blue-500 transition-all text-gray-700">
             <FaCalendarCheck className="text-blue-500 text-xl sm:text-base" />
             <span className="font-medium text-xs sm:text-sm text-center">Book Appointment</span>
-          </button>
-          <button className="flex flex-col sm:flex-row items-center justify-center sm:justify-start space-y-2 sm:space-y-0 sm:space-x-3 bg-white p-3 sm:py-3 sm:px-4 rounded-xl shadow-sm border border-gray-100 hover:shadow-md hover:border-blue-500 transition-all text-gray-700">
-            <FaFileMedical className="text-blue-500 text-xl sm:text-base" />
-            <span className="font-medium text-xs sm:text-sm text-center">EHR Search</span>
-          </button>
-          <button className="flex flex-col sm:flex-row items-center justify-center sm:justify-start space-y-2 sm:space-y-0 sm:space-x-3 bg-white p-3 sm:py-3 sm:px-4 rounded-xl shadow-sm border border-gray-100 hover:shadow-md hover:border-blue-500 transition-all text-gray-700">
-            <FaVial className="text-blue-500 text-xl sm:text-base" />
-            <span className="font-medium text-xs sm:text-sm text-center">Lab Results</span>
-          </button>
+          </Link>
+          <Link to="/billing" className="flex flex-col sm:flex-row items-center justify-center sm:justify-start space-y-2 sm:space-y-0 sm:space-x-3 bg-white p-3 sm:py-3 sm:px-4 rounded-xl shadow-sm border border-gray-100 hover:shadow-md hover:border-emerald-500 transition-all text-gray-700">
+            <FaFileMedical className="text-emerald-500 text-xl sm:text-base" />
+            <span className="font-medium text-xs sm:text-sm text-center">Billing & Invoices</span>
+          </Link>
+          <Link to="/wards" className="flex flex-col sm:flex-row items-center justify-center sm:justify-start space-y-2 sm:space-y-0 sm:space-x-3 bg-white p-3 sm:py-3 sm:px-4 rounded-xl shadow-sm border border-gray-100 hover:shadow-md hover:border-indigo-500 transition-all text-gray-700">
+            <FaBed className="text-indigo-500 text-xl sm:text-base" />
+            <span className="font-medium text-xs sm:text-sm text-center">Bed Management</span>
+          </Link>
         </div>
       </div>
 

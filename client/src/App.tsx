@@ -9,6 +9,7 @@ import Patients from './pages/Patients';
 import Doctors from './pages/Doctors';
 import Appointments from './pages/Appointments';
 import Wards from './pages/Wards';
+import Billing from './pages/Billing';
 
 // A simple login component
 function Login({ setToken }: { setToken: (t: string) => void }) {
@@ -89,7 +90,7 @@ function Login({ setToken }: { setToken: (t: string) => void }) {
             Sign In
           </button>
         </form>
-        <p className="mt-8 text-xs text-gray-400 text-center font-medium">Use admin / admin123</p>
+
       </div>
     </div>
   );
@@ -113,6 +114,7 @@ export default function App() {
           <Route path="doctors" element={<Doctors />} />
           <Route path="appointments" element={<Appointments />} />
           <Route path="wards" element={<Wards />} />
+          <Route path="billing" element={<Billing />} />
           
           {/* Catch all unmatched routes and redirect to dashboard */}
           <Route path="*" element={<Navigate to="/" />} />

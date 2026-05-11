@@ -40,6 +40,7 @@ export default function DashboardLayout() {
           <NavLink onClick={() => setIsMobileMenuOpen(false)} to="/doctors" className={navClasses}>Doctors</NavLink>
           <NavLink onClick={() => setIsMobileMenuOpen(false)} to="/appointments" className={navClasses}>Appointments</NavLink>
           <NavLink onClick={() => setIsMobileMenuOpen(false)} to="/wards" className={navClasses}>Bed Management</NavLink>
+          <NavLink onClick={() => setIsMobileMenuOpen(false)} to="/billing" className={navClasses}>Billing & Invoices</NavLink>
         </nav>
         <div className="p-4 border-t border-blue-800">
           <button onClick={handleLogout} className="w-full bg-red-500 py-2.5 rounded hover:bg-red-600 transition-colors font-semibold shadow">Logout</button>

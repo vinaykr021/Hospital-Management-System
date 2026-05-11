@@ -1,64 +1,50 @@
-import { useState } from 'react';
-import { FaBed, FaProcedures, FaBroom, FaTools, FaCheckCircle, FaHospitalAlt, FaTint } from 'react-icons/fa';
-
-// Mock Data for Beds
-const generateBeds = () => {
-  const wards = ['ICU', 'General', 'Pediatrics', 'Maternity'];
-  const beds = [];
-  let id = 1;
-  for (const ward of wards) {
-    const numBeds = ward === 'ICU' ? 8 : 12;
-    for (let i = 1; i <= numBeds; i++) {
-      let status = 'Available';
-      const rand = Math.random();
-      if (rand > 0.7) status = 'Occupied';
-      else if (rand > 0.9) status = 'Cleaning';
-      else if (rand > 0.95) status = 'Maintenance';
-
-      beds.push({
-        id: id++,
-        number: `${ward.charAt(0)}-${i.toString().padStart(2, '0')}`,
-        ward,
-        status,
-        patientName: status === 'Occupied' ? `Patient #${Math.floor(Math.random() * 1000)}` : null
-      });
-    }
-  }
-  return beds;
-};
+import { useState, useEffect } from 'react';
+import { FaBed, FaProcedures, FaBroom, FaTools, FaCheckCircle, FaHospitalAlt } from 'react-icons/fa';
 
 export default function Wards() {
-  const [beds, setBeds] = useState(generateBeds());
+  const [wards, setWards] = useState<any[]>([]);
+  const [admissions, setAdmissions] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [filter, setFilter] = useState('All');
 
+  const fetchData = async () => {
+    setIsLoading(true);
+    try {
+      const headers = { 'Authorization': `Bearer ${localStorage.getItem('token')}` };
+      const [wardsRes, admissionsRes] = await Promise.all([
+        fetch('http://localhost:3000/api/wards', { headers }),
+        fetch('http://localhost:3000/api/admissions', { headers })
+      ]);
+      
+      const wardsData = await wardsRes.json();
+      const admissionsData = await admissionsRes.json();
+      
+      setWards(wardsData);
+      setAdmissions(admissionsData);
+    } catch (err) {
+      console.error('Failed to fetch ward data', err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchData();
+  }, []);
+
   const stats = {
-    total: beds.length,
-    available: beds.filter(b => b.status === 'Available').length,
-    occupied: beds.filter(b => b.status === 'Occupied').length,
-    cleaning: beds.filter(b => b.status === 'Cleaning' || b.status === 'Maintenance').length
+    total: wards.reduce((acc, w) => acc + w.total_beds, 0),
+    occupied: wards.reduce((acc, w) => acc + w.occupied_beds, 0),
+    available: wards.reduce((acc, w) => acc + (w.total_beds - w.occupied_beds), 0),
   };
 
-  const filteredBeds = filter === 'All' ? beds : beds.filter(b => b.ward === filter);
-  const wardsList = ['All', ...Array.from(new Set(beds.map(b => b.ward)))];
+  const filteredWards = filter === 'All' ? wards : wards.filter(w => w.name === filter);
+  const wardsList = ['All', ...wards.map(w => w.name)];
 
-  const getStatusStyle = (status: string) => {
-    switch(status) {
-      case 'Available': return 'bg-green-100 text-green-700 border-green-300';
-      case 'Occupied': return 'bg-red-100 text-red-700 border-red-300';
-      case 'Cleaning': return 'bg-blue-100 text-blue-700 border-blue-300';
-      case 'Maintenance': return 'bg-orange-100 text-orange-700 border-orange-300';
-      default: return 'bg-gray-100 text-gray-700 border-gray-300';
-    }
-  };
-
-  const getStatusIcon = (status: string) => {
-    switch(status) {
-      case 'Available': return <FaCheckCircle className="text-green-500" />;
-      case 'Occupied': return <FaProcedures className="text-red-500" />;
-      case 'Cleaning': return <FaBroom className="text-blue-500" />;
-      case 'Maintenance': return <FaTools className="text-orange-500" />;
-      default: return <FaBed />;
-    }
+  const getStatusStyle = (isOccupied: boolean) => {
+    return isOccupied 
+      ? 'bg-red-100 text-red-700 border-red-300' 
+      : 'bg-green-100 text-green-700 border-green-300';
   };
 
   return (
@@ -72,7 +58,7 @@ export default function Wards() {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 flex flex-col items-center justify-center text-center">
           <p className="text-gray-500 text-sm font-bold uppercase mb-1">Total Beds</p>
           <h3 className="text-3xl font-black text-gray-800">{stats.total}</h3>
@@ -84,10 +70,6 @@ export default function Wards() {
         <div className="bg-red-50 p-5 rounded-2xl shadow-sm border border-red-100 flex flex-col items-center justify-center text-center">
           <p className="text-red-600 text-sm font-bold uppercase mb-1">Occupied</p>
           <h3 className="text-3xl font-black text-red-700">{stats.occupied}</h3>
-        </div>
-        <div className="bg-blue-50 p-5 rounded-2xl shadow-sm border border-blue-100 flex flex-col items-center justify-center text-center">
-          <p className="text-blue-600 text-sm font-bold uppercase mb-1">In Prep / Maint</p>
-          <h3 className="text-3xl font-black text-blue-700">{stats.cleaning}</h3>
         </div>
       </div>
 
@@ -104,21 +86,52 @@ export default function Wards() {
         ))}
       </div>
 
-      {/* Grid */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
-        {filteredBeds.map(bed => (
-          <div key={bed.id} className={`p-4 rounded-2xl border-2 flex flex-col items-center justify-center text-center transition-transform hover:scale-105 cursor-pointer ${getStatusStyle(bed.status)}`}>
-            <div className="text-3xl mb-2 bg-white/50 p-3 rounded-full backdrop-blur-sm">
-              {getStatusIcon(bed.status)}
+      {/* Wards Display */}
+      <div className="space-y-8">
+        {filteredWards.map(ward => {
+          const wardAdmissions = admissions.filter(a => a.ward_id === ward.id);
+          const beds = [];
+          for (let i = 1; i <= ward.total_beds; i++) {
+            const admission = wardAdmissions.find(a => a.bed_no === i);
+            beds.push({
+              number: `${ward.name.charAt(0)}-${i.toString().padStart(2, '0')}`,
+              bed_no: i,
+              isOccupied: !!admission,
+              patientName: admission ? admission.patient_name : null
+            });
+          }
+
+          return (
+            <div key={ward.id} className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100">
+              <div className="flex justify-between items-center mb-6">
+                <div>
+                  <h3 className="text-xl font-bold text-gray-800">{ward.name} Ward</h3>
+                  <p className="text-sm text-gray-500">{ward.floor} • {ward.occupied_beds}/{ward.total_beds} Beds Occupied</p>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <span className="w-3 h-3 rounded-full bg-green-500"></span>
+                  <span className="text-xs font-bold text-gray-400 uppercase">Live Status</span>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+                {beds.map((bed, idx) => (
+                  <div key={idx} className={`p-4 rounded-2xl border-2 flex flex-col items-center justify-center text-center transition-transform hover:scale-105 ${getStatusStyle(bed.isOccupied)}`}>
+                    <div className="text-2xl mb-2 bg-white/50 p-2 rounded-full backdrop-blur-sm">
+                      {bed.isOccupied ? <FaProcedures className="text-red-500" /> : <FaBed className="text-green-500" />}
+                    </div>
+                    <h4 className="font-bold text-sm">{bed.number}</h4>
+                    <p className="text-xs mt-2 font-medium bg-white/40 px-2 py-1 rounded-md w-full truncate">
+                      {bed.patientName || 'Available'}
+                    </p>
+                  </div>
+                ))}
+              </div>
             </div>
-            <h4 className="font-bold text-lg">{bed.number}</h4>
-            <p className="text-xs font-semibold uppercase tracking-wider opacity-80">{bed.ward}</p>
-            <p className="text-xs mt-2 font-medium bg-white/40 px-2 py-1 rounded-md w-full truncate">
-              {bed.patientName || bed.status}
-            </p>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );
 }
+
