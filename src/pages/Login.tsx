@@ -1,32 +1,32 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Stethoscope, Lock, Mail, ChevronRight } from 'lucide-react';
+import { Stethoscope, Lock, Mail, ChevronRight, AlertCircle } from 'lucide-react';
 import type { UserRole } from '../types';
-import { motion } from 'framer-motion';
+import { apiService } from '../services/api';
+import { motion, AnimatePresence } from 'framer-motion';
 
 const Login: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [role, setRole] = useState<UserRole>('ADMIN');
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+    setError(null);
     
-    // Simulate API call
-    setTimeout(() => {
-      const mockUser = {
-        id: 'u1',
-        name: 'Admin User',
-        email: email,
-        role: 'ADMIN'
-      };
-      localStorage.setItem('user', JSON.stringify(mockUser));
-      setLoading(false);
+    try {
+      const data = await apiService.login({ email, password });
+      localStorage.setItem('token', data.token);
+      localStorage.setItem('user', JSON.stringify(data.user));
       navigate('/dashboard');
-    }, 1000);
+    } catch (err: any) {
+      setError(err.message || 'Login failed. Please check your credentials.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -50,41 +50,55 @@ const Login: React.FC = () => {
               </div>
             </div>
 
-            <div className="text-center mb-6 md:mb-10">
-              <h2 className="text-2xl md:text-3xl font-bold text-text-main font-outfit">Welcome to MedFlow</h2>
-              <p className="text-text-muted mt-2 text-sm">Manage hospital operations seamlessly</p>
+            <div className="text-center mb-8">
+              <h1 className="text-2xl md:text-3xl font-bold text-text-main">Welcome to MedFlow</h1>
+              <p className="text-text-muted text-sm mt-2">Manage hospital operations seamlessly</p>
             </div>
+
+            <AnimatePresence>
+              {error && (
+                <motion.div 
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  className="mb-6 p-4 bg-danger/10 border border-danger/20 rounded-2xl flex items-center gap-3 text-danger text-sm"
+                >
+                  <AlertCircle size={18} className="shrink-0" />
+                  <p>{error}</p>
+                </motion.div>
+              )}
+            </AnimatePresence>
 
             <form onSubmit={handleLogin} className="space-y-4 md:y-6">
               <div className="space-y-2 text-center">
-                <label className="text-[10px] font-bold text-text-muted uppercase block">Login as</label>
-                <div className="flex justify-center">
-                  <div className="w-full py-2 md:py-3 px-4 text-[10px] md:text-xs font-bold rounded-xl transition-all border bg-primary text-white border-primary shadow-lg shadow-blue-100 text-center">
-                    ADMINISTRATOR
+              <div className="space-y-2">
+                <label className="text-[10px] font-bold text-text-muted uppercase ml-1">Username</label>
+                <div className="relative group">
+                  <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-text-muted group-focus-within:text-primary transition-colors">
+                    <Mail size={18} />
                   </div>
-                </div>
-              </div>
-
-              <div className="space-y-3 md:y-4">
-                <div className="relative">
-                  <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-text-muted" size={18} />
                   <input
-                    type="email"
-                    placeholder="Email Address"
+                    type="text"
                     required
-                    className="w-full pl-11 md:pl-12 pr-4 py-3 md:py-4 bg-background border border-border rounded-2xl focus:outline-none focus:border-primary focus:ring-4 focus:ring-blue-50 transition-all text-sm"
+                    className="w-full pl-11 pr-4 py-3 md:py-4 bg-background border border-border rounded-2xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-sm"
+                    placeholder="Enter username"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                   />
                 </div>
+              </div>
 
-                <div className="relative">
-                  <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-text-muted" size={18} />
+              <div className="space-y-2">
+                <label className="text-[10px] font-bold text-text-muted uppercase ml-1">Password</label>
+                <div className="relative group">
+                  <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-text-muted group-focus-within:text-primary transition-colors">
+                    <Lock size={18} />
+                  </div>
                   <input
                     type="password"
-                    placeholder="Password"
+                    placeholder="Enter password"
                     required
-                    className="w-full pl-11 md:pl-12 pr-4 py-3 md:py-4 bg-background border border-border rounded-2xl focus:outline-none focus:border-primary focus:ring-4 focus:ring-blue-50 transition-all text-sm"
+                    className="w-full pl-11 pr-4 py-3 md:py-4 bg-background border border-border rounded-2xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-sm"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                   />

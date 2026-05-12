@@ -34,6 +34,15 @@ const fetchWithAuth = async (endpoint: string, options: RequestInit = {}) => {
 };
 
 export const apiService = {
+  // Auth
+  login: async (credentials: any): Promise<any> => {
+    const response = await fetchWithAuth('/login', {
+      method: 'POST',
+      body: JSON.stringify(credentials),
+    });
+    return response.data;
+  },
+
   // Stats
   getDashboardStats: async (): Promise<DashboardStats> => {
     const response = await fetchWithAuth('/dashboard/stats');

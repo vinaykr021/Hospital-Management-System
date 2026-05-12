@@ -120,13 +120,21 @@ export const initDb = async (db: Database) => {
 };
 
 const seedData = async (db: Database) => {
-  const hashedPassword = await bcrypt.hash('password123', 10);
+  const hashedPassword = await bcrypt.hash('admin123', 10);
   
   // Seed Admin
-  await db.run(
-    'INSERT OR IGNORE INTO users (name, email, password, role) VALUES (?, ?, ?, ?)',
-    ['Admin User', 'admin@medflow.com', hashedPassword, 'ADMIN']
-  );
+  const adminExists = await db.get('SELECT id FROM users WHERE email = ?', ['admin']);
+  if (!adminExists) {
+    await db.run(
+      'INSERT INTO users (name, email, password, role) VALUES (?, ?, ?, ?)',
+      ['Admin User', 'admin', hashedPassword, 'ADMIN']
+    );
+  } else {
+    await db.run(
+      'UPDATE users SET password = ? WHERE email = ?',
+      [hashedPassword, 'admin']
+    );
+  }
 
   // Seed Default Departments
   const depts = [

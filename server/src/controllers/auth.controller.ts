@@ -5,7 +5,7 @@ import { getDb } from '../database/connection';
 import { z } from 'zod';
 
 const loginSchema = z.object({
-  email: z.string().email(),
+  email: z.string(),
   password: z.string().min(6),
 });
 
