@@ -25,6 +25,15 @@ export const initDb = async (db: Database) => {
     )
   `);
 
+  // Specializations Table
+  await db.exec(`
+    CREATE TABLE IF NOT EXISTS specializations (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT NOT NULL,
+      description TEXT
+    )
+  `);
+
   // Doctors Table
   await db.exec(`
     CREATE TABLE IF NOT EXISTS doctors (
@@ -75,12 +84,34 @@ export const initDb = async (db: Database) => {
     CREATE TABLE IF NOT EXISTS bills (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       patient_id INTEGER NOT NULL,
-      appointment_id INTEGER NOT NULL,
+      doctor_id INTEGER,
+      appointment_id INTEGER,
+      service_type TEXT NOT NULL,
+      consultation_fee REAL DEFAULT 0,
+      bed_charges REAL DEFAULT 0,
+      medicine_charges REAL DEFAULT 0,
+      other_charges REAL DEFAULT 0,
       total_amount REAL NOT NULL,
-      payment_status TEXT CHECK(payment_status IN ('PAID', 'UNPAID')) DEFAULT 'UNPAID',
-      generated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      payment_status TEXT CHECK(payment_status IN ('Paid', 'Pending', 'Partial')) DEFAULT 'Pending',
+      payment_method TEXT CHECK(payment_method IN ('Cash', 'Card', 'UPI', 'Insurance', 'Other')) DEFAULT 'Cash',
+      billing_date DATETIME DEFAULT CURRENT_TIMESTAMP,
       FOREIGN KEY (patient_id) REFERENCES patients (id) ON DELETE CASCADE,
-      FOREIGN KEY (appointment_id) REFERENCES appointments (id) ON DELETE CASCADE
+      FOREIGN KEY (doctor_id) REFERENCES doctors (id) ON DELETE SET NULL,
+      FOREIGN KEY (appointment_id) REFERENCES appointments (id) ON DELETE SET NULL
+    )
+  `);
+  
+  // Beds Table
+  await db.exec(`
+    CREATE TABLE IF NOT EXISTS beds (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      bed_number TEXT UNIQUE NOT NULL,
+      room_number TEXT NOT NULL,
+      ward_type TEXT NOT NULL,
+      bed_type TEXT NOT NULL,
+      status TEXT CHECK(status IN ('Available', 'Occupied', 'Cleaning', 'Maintenance')) DEFAULT 'Available',
+      assigned_patient_id INTEGER,
+      FOREIGN KEY (assigned_patient_id) REFERENCES patients (id) ON DELETE SET NULL
     )
   `);
 
@@ -89,42 +120,49 @@ export const initDb = async (db: Database) => {
 };
 
 const seedData = async (db: Database) => {
-  const userCount = await db.get('SELECT COUNT(*) as count FROM users');
-  if (userCount.count > 0) return;
-
-  console.log('Seeding demo data...');
-
   const hashedPassword = await bcrypt.hash('password123', 10);
-
+  
   // Seed Admin
   await db.run(
-    'INSERT INTO users (name, email, password, role) VALUES (?, ?, ?, ?)',
+    'INSERT OR IGNORE INTO users (name, email, password, role) VALUES (?, ?, ?, ?)',
     ['Admin User', 'admin@medflow.com', hashedPassword, 'ADMIN']
   );
 
-  // Seed Department
-  const dept = await db.run(
-    'INSERT INTO departments (name, description) VALUES (?, ?)',
-    ['Cardiology', 'Heart and vascular care']
-  );
+  // Seed Default Departments
+  const depts = [
+    ['General Medicine', 'Primary healthcare and general checkups'],
+    ['Neurology', 'Diagnosis and treatment of nervous system disorders'],
+    ['Psychology', 'Mental health and behavioral studies'],
+    ['Cardiothoracic Surgery', 'Surgical procedures on organs inside the thorax'],
+    ['Immunology', 'Immune system studies and treatments'],
+    ['General Surgery', 'Broad range of surgical procedures']
+  ];
 
-  // Seed Doctor User
-  const docUser = await db.run(
-    'INSERT INTO users (name, email, password, role) VALUES (?, ?, ?, ?)',
-    ['Dr. Sarah Connor', 'sarah@medflow.com', hashedPassword, 'DOCTOR']
-  );
+  for (const [name, desc] of depts) {
+    const exists = await db.get('SELECT id FROM departments WHERE name = ?', [name]);
+    if (!exists) {
+      await db.run('INSERT INTO departments (name, description) VALUES (?, ?)', [name, desc]);
+    }
+  }
 
-  // Seed Doctor Info
-  await db.run(
-    'INSERT INTO doctors (user_id, department_id, specialization, phone, availability, experience_years) VALUES (?, ?, ?, ?, ?, ?)',
-    [docUser.lastID, dept.lastID, 'Cardiologist', '555-0101', '9:00 AM - 5:00 PM', 12]
-  );
-
-  // Seed Patient
-  await db.run(
-    'INSERT INTO patients (full_name, age, gender, blood_group, phone, address, medical_history) VALUES (?, ?, ?, ?, ?, ?, ?)',
-    ['John Doe', 45, 'Male', 'O+', '123-456-7890', '123 Main St, NY', 'Hypertension']
-  );
+  // Seed Default Specializations
+  const specs = [
+    'Cardiologist', 
+    'Neurologist', 
+    'Psychologist',
+    'Cardiothoracic Surgeon',
+    'Immunologist',
+    'General Surgeon',
+    'Pediatrician', 
+    'Dermatologist', 
+    'General Physician'
+  ];
+  for (const spec of specs) {
+    const exists = await db.get('SELECT id FROM specializations WHERE name = ?', [spec]);
+    if (!exists) {
+      await db.run('INSERT INTO specializations (name) VALUES (?)', [spec]);
+    }
+  }
 
   console.log('Seeding completed.');
 };

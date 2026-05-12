@@ -38,3 +38,11 @@ export const updateAppointmentStatus = async (req: Request, res: Response) => {
   await db.run('UPDATE appointments SET status = ? WHERE id = ?', [status, req.params.id]);
   res.json({ success: true, message: 'Appointment status updated' });
 };
+
+export const deleteAppointment = async (req: Request, res: Response) => {
+  const { id } = req.params;
+  const db = await getDb();
+  
+  await db.run('DELETE FROM appointments WHERE id = ?', [id]);
+  res.json({ success: true, message: 'Appointment deleted successfully' });
+};

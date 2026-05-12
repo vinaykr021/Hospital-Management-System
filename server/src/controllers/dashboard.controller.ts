@@ -8,7 +8,7 @@ export const getDashboardStats = async (req: Request, res: Response) => {
     db.get('SELECT COUNT(*) as count FROM patients'),
     db.get('SELECT COUNT(*) as count FROM doctors'),
     db.get('SELECT COUNT(*) as count FROM appointments WHERE appointment_date = CURRENT_DATE'),
-    db.get('SELECT SUM(total_amount) as total FROM bills WHERE payment_status = "PAID"')
+    db.get('SELECT SUM(total_amount) as total FROM bills WHERE payment_status = "Paid"')
   ]);
 
   res.json({

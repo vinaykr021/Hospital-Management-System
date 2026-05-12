@@ -6,6 +6,7 @@ import Dashboard from './pages/Dashboard';
 import Patients from './pages/Patients';
 import Doctors from './pages/Doctors';
 import Appointments from './pages/Appointments';
+import Beds from './pages/Beds';
 import Billing from './pages/Billing';
 
 function App() {
@@ -20,6 +21,7 @@ function App() {
           <Route path="patients" element={<Patients />} />
           <Route path="doctors" element={<Doctors />} />
           <Route path="appointments" element={<Appointments />} />
+          <Route path="beds" element={<Beds />} />
           <Route path="billing" element={<Billing />} />
         </Route>
 

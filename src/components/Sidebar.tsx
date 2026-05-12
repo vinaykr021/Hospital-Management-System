@@ -9,7 +9,8 @@ import {
   LogOut, 
   Menu,
   X,
-  Stethoscope
+  Stethoscope,
+  BedDouble
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -34,6 +35,7 @@ const Sidebar: React.FC<SidebarProps> = ({ role, isMobileOpen, setIsMobileOpen }
     { name: 'Patients', icon: Users, path: '/patients', roles: ['ADMIN', 'DOCTOR', 'RECEPTIONIST'] },
     { name: 'Doctors', icon: UserRound, path: '/doctors', roles: ['ADMIN', 'RECEPTIONIST'] },
     { name: 'Appointments', icon: CalendarDays, path: '/appointments', roles: ['ADMIN', 'DOCTOR', 'RECEPTIONIST'] },
+    { name: 'Bed Management', icon: BedDouble, path: '/beds', roles: ['ADMIN', 'DOCTOR', 'RECEPTIONIST'] },
     { name: 'Billing', icon: FileText, path: '/billing', roles: ['ADMIN', 'RECEPTIONIST'] },
   ];
 

@@ -19,9 +19,9 @@ const Login: React.FC = () => {
     setTimeout(() => {
       const mockUser = {
         id: 'u1',
-        name: role === 'ADMIN' ? 'Admin User' : role === 'DOCTOR' ? 'Dr. Smith' : 'Receptionist One',
+        name: 'Admin User',
         email: email,
-        role: role
+        role: 'ADMIN'
       };
       localStorage.setItem('user', JSON.stringify(mockUser));
       setLoading(false);
@@ -56,24 +56,12 @@ const Login: React.FC = () => {
             </div>
 
             <form onSubmit={handleLogin} className="space-y-4 md:y-6">
-              <div className="space-y-2">
-                <label className="text-[10px] font-bold text-text-muted uppercase ml-1">Login as</label>
-                <div className="grid grid-cols-3 gap-2 md:gap-3">
-                  {(['ADMIN', 'DOCTOR', 'RECEPTIONIST'] as UserRole[]).map((r) => (
-                    <button
-                      key={r}
-                      type="button"
-                      onClick={() => setRole(r)}
-                      className={`
-                        py-2 md:py-3 px-1 md:px-2 text-[10px] md:text-xs font-bold rounded-xl transition-all border
-                        ${role === r 
-                          ? 'bg-primary text-white border-primary shadow-lg shadow-blue-100' 
-                          : 'bg-white text-text-muted border-border hover:border-primary'}
-                      `}
-                    >
-                      {r}
-                    </button>
-                  ))}
+              <div className="space-y-2 text-center">
+                <label className="text-[10px] font-bold text-text-muted uppercase block">Login as</label>
+                <div className="flex justify-center">
+                  <div className="w-full py-2 md:py-3 px-4 text-[10px] md:text-xs font-bold rounded-xl transition-all border bg-primary text-white border-primary shadow-lg shadow-blue-100 text-center">
+                    ADMINISTRATOR
+                  </div>
                 </div>
               </div>
 
